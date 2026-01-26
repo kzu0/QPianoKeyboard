@@ -1,0 +1,146 @@
+#include "pianokeyboard.h"
+#include <QPainter>
+#include <QApplication>
+#include <QStyleOptionGraphicsItem>
+
+QPianoKey::QPianoKey(QGraphicsItem *parent, uint8_t key) : QGraphicsObject(parent), m_key(key)
+{
+    setAcceptHoverEvents(true);
+}
+
+void QPianoKey::setRect(QRectF rect)
+{
+    m_rect = rect;
+    update();
+}
+
+QRectF QPianoKey::boundingRect() const
+{
+    return m_rect;
+}
+
+void QPianoKey::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
+{
+    QColor base;
+    if (m_pressed || option->state & QStyle::State_Sunken)
+        base = qApp->palette().color(QPalette::Highlight);
+    else if (option->state & QStyle::State_MouseOver)
+        base = qApp->palette().color(QPalette::Highlight).lighter();
+    else
+        base = isBlack() ? Qt::black : Qt::white;
+
+    painter->setBrush(base);
+    painter->setPen(Qt::black);
+    painter->drawRect(m_rect);
+
+    Q_UNUSED(widget);
+}
+
+bool QPianoKey::isBlack()
+{
+    switch (m_key%12) {
+    case 1:
+    case 3:
+    case 6:
+    case 8:
+    case 10:
+        return true;
+    default:
+        return false;
+    }
+}
+
+void QPianoKey::hoverEnterEvent(QGraphicsSceneHoverEvent*)
+{
+    update();
+}
+
+void QPianoKey::hoverLeaveEvent(QGraphicsSceneHoverEvent*)
+{
+    update();
+}
+
+void QPianoKey::mousePressEvent(QGraphicsSceneMouseEvent*)
+{
+    m_pressed = true;
+    emit pressed(m_key);
+    update();
+}
+void QPianoKey::mouseReleaseEvent(QGraphicsSceneMouseEvent*)
+{
+    m_pressed = false;
+    emit released(m_key);
+    update();
+}
+
+void QPianoKey::setPressed(bool pressed)
+{
+    if (pressed == m_pressed) return;
+    m_pressed = pressed;
+    update();
+}
+
+QPianoKeyboard::QPianoKeyboard(QWidget *parent) : QGraphicsView(parent)
+{
+    QGraphicsScene* scene = new QGraphicsScene(this);
+    setScene(scene);
+
+    setDragMode(QGraphicsView::NoDrag);
+    setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+
+    for (uint8_t i = 0; i < KEYS_NUMBER; i ++)
+    {
+        QPianoKey* key = new QPianoKey(nullptr, i);
+        key->setZValue(key->isBlack() ? 2 : 1);
+        scene->addItem(key);
+        keys.append(key);
+        connect(key, &QPianoKey::pressed, this, &QPianoKeyboard::keyPressed);
+        connect(key, &QPianoKey::released, this, &QPianoKeyboard::keyReleased);
+    }
+
+    QLinearGradient gradient(QPoint(0, 0), QPoint(0, 15));
+    gradient.setColorAt(0, QColor::fromRgbF(0, 0, 0, 1));
+    gradient.setColorAt(1, QColor::fromRgbF(0, 0, 0, 0));
+    foreground = scene->addRect(0,0,width(),height(),QPen(Qt::transparent),QBrush(gradient));
+    foreground->setZValue(3);
+}
+
+QPianoKeyboard::~QPianoKeyboard()
+{
+    scene()->clear();
+}
+
+void QPianoKeyboard::setKeyPressed(uint8_t key, bool pressed)
+{
+    if (key >= keys.count()) return;
+
+    keys.at(key)->setPressed(pressed);
+}
+
+void QPianoKeyboard::resizeEvent(QResizeEvent *e)
+{
+    QGraphicsView::resizeEvent(e);
+
+    qreal w = (qreal)(width()-4)/75; // 75 = numero di tasti bianchi
+    qreal h = height()-4;
+
+    uint8_t cc = 0;
+
+    foreground->setRect(0, 0, width()-4, height()-4);
+
+    for (uint8_t i = 0; i < keys.count(); i ++)
+    {
+        if (keys.at(i)->isBlack())
+        {
+            keys.at(i)->setRect(QRectF(cc*w-w/4, 0, w/2, h-h/3));
+        }
+        else
+        {
+            keys.at(i)->setRect(QRectF(w*cc, 0, w, h));
+            cc++;
+        }
+    }
+
+    scene()->setSceneRect(QRectF(0, 0, width()-2, height()-2));
+}
