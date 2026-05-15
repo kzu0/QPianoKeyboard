@@ -13,6 +13,7 @@ public:
 
     bool isBlack();
     void setPressed(bool pressed);
+    void setPressedColor(QColor c);
 
     void setRect(QRectF rect);
 
@@ -24,6 +25,7 @@ private:
     QRectF m_rect;
 
     bool m_pressed = false;
+    QColor m_pressedColor;
 
 protected:
     void hoverEnterEvent(QGraphicsSceneHoverEvent*) override;
@@ -39,10 +41,14 @@ signals:
 class QPianoKeyboard : public QGraphicsView
 {
     Q_OBJECT
+    Q_PROPERTY(QColor keyPressedColor READ getKeyPressedColor WRITE setKeyPressedColor DESIGNABLE true)
 
 public:
     explicit QPianoKeyboard(QWidget *parent = nullptr);
     ~QPianoKeyboard();
+
+    QColor getKeyPressedColor() const;
+    void setKeyPressedColor(QColor c);
 
     static constexpr uint8_t KEYS_NUMBER = 128;
 
@@ -52,6 +58,7 @@ public slots:
 private:
     QList<QPianoKey*> keys;
     QGraphicsRectItem* foreground;
+    QColor keyPressedColor;
 
 protected:
     void resizeEvent(QResizeEvent* e);

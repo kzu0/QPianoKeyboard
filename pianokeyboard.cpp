@@ -5,6 +5,7 @@
 
 QPianoKey::QPianoKey(QGraphicsItem *parent, uint8_t key) : QGraphicsObject(parent), m_key(key)
 {
+    m_pressedColor = qApp->palette().color(QPalette::Highlight);
     setAcceptHoverEvents(true);
 }
 
@@ -23,9 +24,9 @@ void QPianoKey::paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
 {
     QColor base;
     if (m_pressed || option->state & QStyle::State_Sunken)
-        base = qApp->palette().color(QPalette::Highlight);
+        base = m_pressedColor;
     else if (option->state & QStyle::State_MouseOver)
-        base = qApp->palette().color(QPalette::Highlight).lighter();
+        base = m_pressedColor.lighter();
     else
         base = isBlack() ? Qt::black : Qt::white;
 
@@ -80,6 +81,11 @@ void QPianoKey::setPressed(bool pressed)
     update();
 }
 
+void QPianoKey::setPressedColor(QColor c)
+{
+    m_pressedColor = c;
+}
+
 QPianoKeyboard::QPianoKeyboard(QWidget *parent) : QGraphicsView(parent)
 {
     QGraphicsScene* scene = new QGraphicsScene(this);
@@ -109,6 +115,21 @@ QPianoKeyboard::QPianoKeyboard(QWidget *parent) : QGraphicsView(parent)
 QPianoKeyboard::~QPianoKeyboard()
 {
     scene()->clear();
+}
+
+QColor QPianoKeyboard::getKeyPressedColor() const
+{
+    return keyPressedColor;
+}
+
+void QPianoKeyboard::setKeyPressedColor(QColor c)
+{
+    keyPressedColor = c;
+
+    for (uint8_t i = 0; i < keys.count(); i ++)
+    {
+        keys.at(i)->setPressedColor(c);
+    }
 }
 
 void QPianoKeyboard::setKeyPressed(uint8_t key, bool pressed)
