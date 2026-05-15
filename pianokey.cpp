@@ -66,6 +66,11 @@ bool QPianoKey::isNatural() const
     }
 }
 
+bool QPianoKey::isAccidental() const
+{
+    return !isNatural();
+}
+
 uint8_t QPianoKey::getIndex() const
 {
     return index;

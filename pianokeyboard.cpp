@@ -9,7 +9,7 @@ QPianoKeyboard::QPianoKeyboard(QWidget *parent) : QGraphicsView(parent)
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
-    for (uint8_t i = 0; i < KEYS_NUMBER; i ++)
+    for (uint8_t i = 0; i < TOTAL_KEYS_NUMBER; i ++)
     {
         QPianoKey* key = new QPianoKey(nullptr, i);
         key->setZValue(key->isNatural() ? 1 : 2);
@@ -63,7 +63,7 @@ void QPianoKeyboard::resizeEvent(QResizeEvent *e)
 {
     QGraphicsView::resizeEvent(e);
 
-    qreal w = (qreal)(width()-4)/75; // 75 = numero di tasti bianchi
+    qreal w = (qreal)(width()-4)/NATURAL_KEYS_NUMBER; // numero di tasti bianchi
     qreal h = height()-4;
 
     uint8_t cc = 0;
@@ -72,7 +72,7 @@ void QPianoKeyboard::resizeEvent(QResizeEvent *e)
 
     for (uint8_t i = 0; i < keys.count(); i ++)
     {
-        if (!keys.at(i)->isNatural())
+        if (keys.at(i)->isAccidental())
         {
             keys.at(i)->setRect(QRectF(cc*w-w/4, 0, w/2, h-h/3));
         }

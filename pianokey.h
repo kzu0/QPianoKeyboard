@@ -19,6 +19,8 @@ public:
     void setPressedColor(QColor c);
 
     bool isNatural() const;
+    bool isAccidental() const;
+
     uint8_t getIndex() const;
 
     // For deriving QGraphicsObject

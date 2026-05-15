@@ -17,7 +17,9 @@ public:
     QColor getKeyPressedColor() const;
     void setKeyPressedColor(QColor c);
 
-    static constexpr uint8_t KEYS_NUMBER = 128;
+    static constexpr uint8_t TOTAL_KEYS_NUMBER = 128;
+    static constexpr uint8_t NATURAL_KEYS_NUMBER = 75;
+    static constexpr uint8_t ACCIDENTAL_KEYS = TOTAL_KEYS_NUMBER-NATURAL_KEYS_NUMBER;
 
 public slots:
     void setKeyPressed(uint8_t key, bool pressed);
