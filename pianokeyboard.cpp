@@ -1,90 +1,4 @@
 #include "pianokeyboard.h"
-#include <QPainter>
-#include <QApplication>
-#include <QStyleOptionGraphicsItem>
-
-QPianoKey::QPianoKey(QGraphicsItem *parent, uint8_t key) : QGraphicsObject(parent), m_key(key)
-{
-    m_pressedColor = qApp->palette().color(QPalette::Highlight);
-    setAcceptHoverEvents(true);
-}
-
-void QPianoKey::setRect(QRectF rect)
-{
-    m_rect = rect;
-    update();
-}
-
-QRectF QPianoKey::boundingRect() const
-{
-    return m_rect;
-}
-
-void QPianoKey::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
-{
-    QColor base;
-    if (m_pressed || option->state & QStyle::State_Sunken)
-        base = m_pressedColor;
-    else if (option->state & QStyle::State_MouseOver)
-        base = m_pressedColor.lighter();
-    else
-        base = isBlack() ? Qt::black : Qt::white;
-
-    painter->setBrush(base);
-    painter->setPen(Qt::black);
-    painter->drawRect(m_rect);
-
-    Q_UNUSED(widget);
-}
-
-bool QPianoKey::isBlack()
-{
-    switch (m_key%12) {
-    case 1:
-    case 3:
-    case 6:
-    case 8:
-    case 10:
-        return true;
-    default:
-        return false;
-    }
-}
-
-void QPianoKey::hoverEnterEvent(QGraphicsSceneHoverEvent*)
-{
-    update();
-}
-
-void QPianoKey::hoverLeaveEvent(QGraphicsSceneHoverEvent*)
-{
-    update();
-}
-
-void QPianoKey::mousePressEvent(QGraphicsSceneMouseEvent*)
-{
-    m_pressed = true;
-    emit pressed(m_key);
-    update();
-}
-void QPianoKey::mouseReleaseEvent(QGraphicsSceneMouseEvent*)
-{
-    m_pressed = false;
-    emit released(m_key);
-    update();
-}
-
-void QPianoKey::setPressed(bool pressed)
-{
-    if (pressed == m_pressed) return;
-    m_pressed = pressed;
-    update();
-}
-
-void QPianoKey::setPressedColor(QColor c)
-{
-    m_pressedColor = c;
-}
 
 QPianoKeyboard::QPianoKeyboard(QWidget *parent) : QGraphicsView(parent)
 {
@@ -98,11 +12,17 @@ QPianoKeyboard::QPianoKeyboard(QWidget *parent) : QGraphicsView(parent)
     for (uint8_t i = 0; i < KEYS_NUMBER; i ++)
     {
         QPianoKey* key = new QPianoKey(nullptr, i);
-        key->setZValue(key->isBlack() ? 2 : 1);
+        key->setZValue(key->isNatural() ? 1 : 2);
         scene->addItem(key);
         keys.append(key);
-        connect(key, &QPianoKey::pressed, this, &QPianoKeyboard::keyPressed);
-        connect(key, &QPianoKey::released, this, &QPianoKeyboard::keyReleased);
+
+        connect(key, &QPianoKey::downChanged, this, [this, key](bool down){
+            uint8_t index = key->getIndex();
+            if (down)
+                emit keyPressed(index);
+            else
+                emit keyReleased(index);
+        });
     }
 
     QLinearGradient gradient(QPoint(0, 0), QPoint(0, 15));
@@ -152,7 +72,7 @@ void QPianoKeyboard::resizeEvent(QResizeEvent *e)
 
     for (uint8_t i = 0; i < keys.count(); i ++)
     {
-        if (keys.at(i)->isBlack())
+        if (!keys.at(i)->isNatural())
         {
             keys.at(i)->setRect(QRectF(cc*w-w/4, 0, w/2, h-h/3));
         }
